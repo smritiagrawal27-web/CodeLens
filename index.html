@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeLens | Understand Your Code</title>
+<style>
+:root{--navy:#14213d;--blue:#2563eb;--mint:#dff7ec;--paper:#f5f7fb;--ink:#182235;--muted:#64748b}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--paper);color:var(--ink)}
+header{background:var(--navy);color:white;padding:22px max(5%,calc((100% - 1050px)/2));}
+.brand{font-size:25px;font-weight:700;letter-spacing:.3px}.tag{color:#cbd5e1;margin-top:5px}
+main{max-width:1050px;margin:28px auto;padding:0 18px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.panel{background:white;border:1px solid #e2e8f0;border-radius:16px;padding:22px;box-shadow:0 5px 18px #14213d0b}
+h2{font-size:19px;margin:0 0 8px}p.hint{color:var(--muted);font-size:14px;line-height:1.5;margin:0 0 16px}
+textarea{width:100%;min-height:280px;resize:vertical;border:1px solid #cbd5e1;border-radius:10px;padding:14px;font:14px/1.6 Consolas,monospace;outline-color:var(--blue)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:13px}
+button{border:0;border-radius:9px;padding:11px 16px;font-weight:700;cursor:pointer}
+.primary{background:var(--blue);color:white}.secondary{background:#eaf0fb;color:var(--navy)}
+#results{min-height:280px}.empty{color:var(--muted);background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:22px;line-height:1.6}
+.line{padding:12px;margin:9px 0;border-left:4px solid #60a5fa;background:#f8fbff;border-radius:7px}
+.line strong{display:block;font:13px Consolas,monospace;color:#1d4ed8;margin-bottom:5px;white-space:pre-wrap;overflow-wrap:anywhere}
+.line span{font-size:14px;line-height:1.5}.note{margin-top:15px;padding:12px;background:var(--mint);border-radius:9px;font-size:13px;line-height:1.5}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:15px}
+@media(max-width:760px){main{grid-template-columns:1fr;margin:16px auto}.panel{padding:17px}}
+</style>
+</head>
+<body>
+<header><div class="brand">⌘ CodeLens</div><div class="tag">Pause. Read. Understand.</div></header>
+<main>
+<section class="panel">
+<h2>Paste your code</h2>
+<p class="hint">Start with a small Python or C example. CodeLens gives beginner-friendly explanations for common programming lines.</p>
+<textarea id="code" spellcheck="false">number = 5
+if number > 0:
+    print("Positive number")
+else:
+    print("Not positive")</textarea>
+<div class="actions">
+<button class="primary" onclick="explainCode()">Explain my code</button>
+<button class="secondary" onclick="loadExample()">Load example</button>
+<button class="secondary" onclick="clearCode()">Clear</button>
+</div>
+</section>
+<section class="panel">
+<h2>Line-by-line explanation</h2>
+<p class="hint">Each line is explained in simple language. Try changing the example and explaining it again.</p>
+<div id="results"><div class="empty">Your explanation will appear here. Click “Explain my code” to begin.</div></div>
+<div class="note"><b>Learning tip:</b> Read the explanation, then try to describe the code in your own words. This tool is a learning aid, not a replacement for practising or checking your program.</div>
+</section>
+</main>
+<footer>CodeLens — Student prototype | Supports beginner-level common Python and C patterns</footer>
+<script>
+function explainLine(line, language){
+ const s=line.trim();
+ if(!s) return "This is a blank line. It separates parts of the program and does not run an instruction.";
+ if(/^#|^\/\//.test(s)) return "This is a comment. It is written for people reading the code and is not executed.";
+ if(/^import\s+/.test(s)) return "This imports a module so the program can use code or features provided by it.";
+ if(/^#include/.test(s)) return "This includes a header file, which gives the C program access to declarations such as input/output functions.";
+ if(/^int\s+main\s*\(/.test(s)) return "This is the main function. In a C program, execution starts from main().";
+ if(/^return\b/.test(s)) return "This sends a value back from the current function. In main, return 0 commonly means the program finished successfully.";
+ if(/^if\s*\(?.*:\s*$/.test(s) || /^if\s*\(/.test(s)) return "This checks a condition. The indented or following block runs only when the condition is true.";
+ if(/^else\s*:?$/.test(s) || /^else\s*\{?$/.test(s)) return "This begins the alternative block. It runs when the earlier if condition is false.";
+ if(/^elif\b/.test(s) || /^else if\b/.test(s)) return "This checks another condition if the earlier condition was false.";
+ if(/^for\b/.test(s)) return "This starts a loop. The instructions inside it repeat for each item or each value in the chosen range.";
+ if(/^while\b/.test(s)) return "This starts a loop that keeps repeating while its condition remains true.";
+ if(/^print\s*\(/.test(s) || /^printf\s*\(/.test(s)) return "This displays information on the screen. The text or value inside the brackets is what gets displayed.";
+ if(/^scanf\s*\(/.test(s) || /^input\s*\(/.test(s)) return "This takes input from the user so the program can work with a value entered at runtime.";
+ if(/^def\s+/.test(s) || /^(int|void|float|char|double)\s+\w+\s*\(/.test(s)) return "This defines a function. A function groups instructions under a name so they can be called when needed.";
+ if(/^[}\)]\s*;?$/.test(s) || /^\{\s*$/.test(s)) return "This brace or bracket marks the structure of a code block or expression.";
+ if(/^[\w\[\]]+\s*=\s*.+/.test(s)) return "This assigns the value on the right to the variable on the left. A variable stores information that the program can use.";
+ if(/^\w+\s*\(.*\)\s*;?$/.test(s)) return "This calls a function. The program runs the instructions defined for that function.";
+ if(/^[+\-*/%]?=/.test(s)) return "This updates a stored value using an assignment operator.";
+ return "This line is part of the program's logic. Check the variable names, operators, and nearby lines to understand how it contributes to the overall task.";
+}
+function explainCode(){
+ const code=document.getElementById('code').value;
+ const lines=code.split(/\r?\n/);
+ const out=document.getElementById('results');
+ if(!code.trim()){out.innerHTML='<div class="empty">Please paste some code first.</div>';return;}
+ out.innerHTML='';
+ lines.forEach((line,i)=>{
+  const card=document.createElement('div');card.className='line';
+  const strong=document.createElement('strong');strong.textContent=(i+1)+'. '+(line||'(blank line)');
+  const span=document.createElement('span');span.textContent=explainLine(line);
+  card.appendChild(strong);card.appendChild(span);out.appendChild(card);
+ });
+}
+function loadExample(){document.getElementById('code').value='number = 5\\nif number > 0:\\n    print("Positive number")\\nelse:\\n    print("Not positive")';explainCode();}
+function clearCode(){document.getElementById('code').value='';document.getElementById('results').innerHTML='<div class="empty">Paste code and click “Explain my code”.</div>';}
+</script>
+</body>
+</html>
